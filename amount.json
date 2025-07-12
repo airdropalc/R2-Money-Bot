@@ -1,0 +1,9 @@
+{
+  "buyUsdcToR2usd": "100",
+  "sellR2usdToUsdc": "100",
+  "swapR2ToR2usd": "100",
+  "swapR2usdToR2": "100",
+  "stakewBtc": "0.01",
+  "stakeR2USD": "100",
+  "addLiquidity": "100"
+}
