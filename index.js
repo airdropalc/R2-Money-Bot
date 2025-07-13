@@ -6,21 +6,16 @@ const log = require('./config/logger');
 const fs = require('fs');
 const { HttpsProxyAgent } = require('https-proxy-agent');
 
-// Results tracker
 const operationResults = {};
 
-// Proxy configuration
 let proxyList = [];
 let currentProxyIndex = 0;
 
-// Operation loop configuration - Load from loop.json or use defaults
 let operationLoops = {};
 try {
   if (fs.existsSync('./loop.json')) {
     operationLoops = JSON.parse(fs.readFileSync('./loop.json', 'utf-8'));
     log.info('Loaded operation loops configuration from loop.json');
-    
-    // Validate all required fields are present
     const requiredFields = ['buy', 'sell', 'swap', 'stake', 'liquidity'];
     const defaults = {
       buy: 2,
@@ -37,7 +32,6 @@ try {
       }
     });
   } else {
-    // Default values if loop.json doesn't exist
     operationLoops = {
       buy: 2,
       sell: 3,
@@ -49,7 +43,6 @@ try {
   }
 } catch (error) {
   log.error(`Failed to load loop configuration: ${error.message}`);
-  // Fallback to default values
   operationLoops = {
     buy: 2,
     sell: 3,
@@ -60,7 +53,6 @@ try {
   log.warn('Using default loop values due to error');
 }
 
-// Utility functions for human-like behavior
 function randomDelay(minSeconds = 5, maxSeconds = 15) {
   const delayMs = Math.floor(Math.random() * (maxSeconds - minSeconds + 1) + minSeconds) * 1000;
   log.info(`Waiting ${delayMs/1000} seconds before next operation...`);
@@ -79,13 +71,13 @@ async function executeWithRetryAndDelay(operationFn, operationName, params, maxA
     attempts++;
     try {
       log.step(`Attempt ${attempts} of ${maxAttempts} for ${operationName}`);
-      await randomSmallDelay(); // Small random delay before each attempt
+      await randomSmallDelay(); 
       const result = await operationFn(...params);
       return result;
     } catch (error) {
       log.error(`Attempt ${attempts} failed: ${error.message}`);
       if (attempts < maxAttempts) {
-        const delayTime = Math.min(attempts * 10, 30); // Exponential backoff max 30 seconds
+        const delayTime = Math.min(attempts * 10, 30); 
         log.info(`Waiting ${delayTime} seconds before retry...`);
         await new Promise(resolve => setTimeout(resolve, delayTime * 1000));
       }
@@ -135,14 +127,12 @@ async function createProviderWithProxy(rpcUrl, chainId) {
       batchMaxCount: 1,
       agent: agent
     });
-    
-    // Test connection
+
     await provider.getBlockNumber();
     log.success('Proxy connection successful');
     return provider;
   } catch (error) {
     log.error(`Failed to connect with proxy: ${error.message}`);
-    // Fallback to direct connection
     log.warn('Falling back to direct connection');
     return new ethers.JsonRpcProvider(rpcUrl, chainId);
   }
@@ -150,7 +140,7 @@ async function createProviderWithProxy(rpcUrl, chainId) {
 
 async function initializeWallet(privateKey) {
   try {
-    loadProxies(); // Load proxies at startup
+    loadProxies(); 
     
     log.step(`Connecting to ${Config.Network.name} network...`);
     const provider = await createProviderWithProxy(
@@ -225,8 +215,7 @@ async function buyUsdcToR2usd(wallet, amount, loops = 1) {
       await executeWithRetryAndDelay(
         async () => {
           log.step(`Starting ${operationName} with ${amount} USDC (Loop ${i+1}/${loops})`);
-          
-          // Check USDC balance
+
           const usdcContract = new ethers.Contract(Config.ContractsAddress.USDC, Config.Abi.Erc20, wallet);
           const decimals = await usdcContract.decimals();
           const amountInWei = ethers.parseUnits(amount, decimals);
@@ -239,7 +228,6 @@ async function buyUsdcToR2usd(wallet, amount, loops = 1) {
           );
           if (!hasBalance) return false;
 
-          // Approve USDC spending
           log.step('Approving USDC for swap');
           const approved = await approveToken(
             wallet,
@@ -250,7 +238,6 @@ async function buyUsdcToR2usd(wallet, amount, loops = 1) {
           
           if (!approved) return false;
 
-          // Prepare transaction data
           const data = ethers.concat([
             Config.Router.buyMethodId,
             ethers.AbiCoder.defaultAbiCoder().encode(
@@ -267,7 +254,6 @@ async function buyUsdcToR2usd(wallet, amount, loops = 1) {
             )
           ]);
 
-          // Execute buy transaction
           log.step('Executing buy transaction');
           const tx = await wallet.sendTransaction({
             to: Config.ContractsAddress.R2USD,
@@ -283,8 +269,7 @@ async function buyUsdcToR2usd(wallet, amount, loops = 1) {
           log.loading('Waiting for transaction confirmation...');
           const receipt = await tx.wait();
           log.success(`Transaction confirmed in block ${receipt.blockNumber}`);
-          
-          // Check new balances
+
           const newUsdcBalance = await checkBalance(wallet, Config.ContractsAddress.USDC);
           const newR2UsdBalance = await checkBalance(wallet, Config.ContractsAddress.R2USD);
           
@@ -315,8 +300,7 @@ async function sellR2usdToUsdc(wallet, amount, loops = 1) {
       await executeWithRetryAndDelay(
         async () => {
           log.step(`Starting ${operationName} with ${amount} R2USD (Loop ${i+1}/${loops})`);
-          
-          // Check R2USD balance
+
           const hasBalance = await ensureSufficientBalance(
             wallet, 
             Config.ContractsAddress.R2USD, 
@@ -325,7 +309,6 @@ async function sellR2usdToUsdc(wallet, amount, loops = 1) {
           );
           if (!hasBalance) return false;
 
-          // Approve R2USD spending
           log.step('Approving R2USD for swap');
           const approved = await approveToken(
             wallet,
@@ -336,13 +319,11 @@ async function sellR2usdToUsdc(wallet, amount, loops = 1) {
           
           if (!approved) return false;
 
-          // Calculate amounts
           const r2usdContract = new ethers.Contract(Config.ContractsAddress.R2USD, Config.Abi.Erc20, wallet);
           const decimals = await r2usdContract.decimals();
           const amountInWei = ethers.parseUnits(amount, decimals);
           const minOutput = amountInWei * 97n / 100n;
-          
-          // Prepare transaction data
+
           const data = ethers.concat([
             Config.Router.sellMethodId,
             ethers.AbiCoder.defaultAbiCoder().encode(
@@ -356,7 +337,6 @@ async function sellR2usdToUsdc(wallet, amount, loops = 1) {
             )
           ]);
 
-          // Execute sell transaction
           log.step('Executing sell transaction');
           const tx = await wallet.sendTransaction({
             to: Config.Router.swapAddress,
@@ -372,8 +352,7 @@ async function sellR2usdToUsdc(wallet, amount, loops = 1) {
           log.loading('Waiting for transaction confirmation...');
           const receipt = await tx.wait();
           log.success(`Transaction confirmed in block ${receipt.blockNumber}`);
-          
-          // Check new balances
+
           const newR2UsdBalance = await checkBalance(wallet, Config.ContractsAddress.R2USD);
           const newUsdcBalance = await checkBalance(wallet, Config.ContractsAddress.USDC);
           
@@ -404,8 +383,7 @@ async function swapR2ToR2usd(wallet, amount, loops = 1) {
       await executeWithRetryAndDelay(
         async () => {
           log.step(`Starting ${operationName} with ${amount} R2 (Loop ${i+1}/${loops})`);
-          
-          // Check R2 balance
+
           const hasBalance = await ensureSufficientBalance(
             wallet, 
             Config.ContractsAddress.R2, 
@@ -414,18 +392,15 @@ async function swapR2ToR2usd(wallet, amount, loops = 1) {
           );
           if (!hasBalance) return false;
 
-          // Initialize contracts
           const r2Token = new ethers.Contract(Config.ContractsAddress.R2, Config.Abi.Erc20, wallet);
           const router = new ethers.Contract(Config.Router.stakingAddress, Config.Abi.Swap, wallet);
-          
-          // Get token decimals
+
           const r2Decimals = await r2Token.decimals();
           const amountInWei = ethers.parseUnits(amount, r2Decimals); 
-          const amountOutMin = ethers.parseUnits('0', 6); // Assuming R2USD has 6 decimals
+          const amountOutMin = ethers.parseUnits('0', 6);
           const path = [Config.ContractsAddress.R2, Config.ContractsAddress.R2USD];
-          const deadline = Math.floor(Date.now() / 1000) + 1200; // 20 minutes from now
+          const deadline = Math.floor(Date.now() / 1000) + 1200; 
 
-          // Approve R2 spending
           log.step('Approving R2 for swap');
           const approved = await approveToken(
             wallet,
@@ -436,7 +411,6 @@ async function swapR2ToR2usd(wallet, amount, loops = 1) {
           
           if (!approved) return false;
 
-          // Execute swap
           log.step('Executing swap R2 -> R2USD');
           const tx = await router.swapExactTokensForTokens(
             amountInWei,
@@ -458,7 +432,6 @@ async function swapR2ToR2usd(wallet, amount, loops = 1) {
           const receipt = await tx.wait();
           log.success(`Transaction confirmed in block ${receipt.blockNumber}`);
           
-          // Check new balances
           const newR2Balance = await checkBalance(wallet, Config.ContractsAddress.R2);
           const newR2UsdBalance = await checkBalance(wallet, Config.ContractsAddress.R2USD);
           
@@ -490,7 +463,6 @@ async function swapR2usdToR2(wallet, amount, loops = 1) {
         async () => {
           log.step(`Starting ${operationName} with ${amount} R2USD (Loop ${i+1}/${loops})`);
           
-          // Check R2USD balance
           const hasBalance = await ensureSufficientBalance(
             wallet, 
             Config.ContractsAddress.R2USD, 
@@ -499,18 +471,15 @@ async function swapR2usdToR2(wallet, amount, loops = 1) {
           );
           if (!hasBalance) return false;
 
-          // Initialize contracts
           const r2usdToken = new ethers.Contract(Config.ContractsAddress.R2USD, Config.Abi.Erc20, wallet);
           const router = new ethers.Contract(Config.Router.stakingAddress, Config.Abi.Swap, wallet);
-          
-          // Get token decimals
+
           const r2usdDecimals = await r2usdToken.decimals();
           const amountInWei = ethers.parseUnits(amount, r2usdDecimals); 
-          const amountOutMin = ethers.parseUnits('0', 18); // Assuming R2 has 18 decimals
+          const amountOutMin = ethers.parseUnits('0', 18);
           const path = [Config.ContractsAddress.R2USD, Config.ContractsAddress.R2];
-          const deadline = Math.floor(Date.now() / 1000) + 1200; // 20 minutes from now
+          const deadline = Math.floor(Date.now() / 1000) + 1200; 
 
-          // Approve R2USD spending
           log.step('Approving R2USD for swap');
           const approved = await approveToken(
             wallet,
@@ -521,7 +490,6 @@ async function swapR2usdToR2(wallet, amount, loops = 1) {
           
           if (!approved) return false;
 
-          // Execute swap
           log.step('Executing swap R2USD -> R2');
           const tx = await router.swapExactTokensForTokens(
             amountInWei,
@@ -543,7 +511,6 @@ async function swapR2usdToR2(wallet, amount, loops = 1) {
           const receipt = await tx.wait();
           log.success(`Transaction confirmed in block ${receipt.blockNumber}`);
           
-          // Check new balances
           const newR2UsdBalance = await checkBalance(wallet, Config.ContractsAddress.R2USD);
           const newR2Balance = await checkBalance(wallet, Config.ContractsAddress.R2);
           
@@ -574,8 +541,7 @@ async function stakewBtc(wallet, amount, loops = 1) {
       await executeWithRetryAndDelay(
         async () => {
           log.step(`Starting ${operationName} with ${amount} wBTC (Loop ${i+1}/${loops})`);
-          
-          // Check wBTC balance
+
           const hasBalance = await ensureSufficientBalance(
             wallet, 
             Config.ContractsAddress.wBTC, 
@@ -584,15 +550,12 @@ async function stakewBtc(wallet, amount, loops = 1) {
           );
           if (!hasBalance) return false;
 
-          // Initialize contracts
           const wbtcToken = new ethers.Contract(Config.ContractsAddress.wBTC, Config.Abi.Erc20, wallet);
           const stakingContract = new ethers.Contract(Config.Router.stakewBtc, Config.Abi.Staking, wallet);
           
-          // Get token decimals
           const decimals = await wbtcToken.decimals();
           const amountInWei = ethers.parseUnits(amount, decimals);
 
-          // Approve wBTC spending
           log.step('Approving wBTC for staking');
           const approved = await approveToken(
             wallet,
@@ -603,7 +566,6 @@ async function stakewBtc(wallet, amount, loops = 1) {
           
           if (!approved) return false;
 
-          // Execute staking
           log.step('Executing wBTC staking');
           const tx = await stakingContract.stake(
             Config.ContractsAddress.wBTC,
@@ -621,8 +583,7 @@ async function stakewBtc(wallet, amount, loops = 1) {
           log.loading('Waiting for transaction confirmation...');
           const receipt = await tx.wait();
           log.success(`Transaction confirmed in block ${receipt.blockNumber}`);
-          
-          // Check new balances
+
           const newWbtcBalance = await checkBalance(wallet, Config.ContractsAddress.wBTC);
           const stakedAmount = await stakingContract.getStakedAmount(wallet.address);
           
@@ -653,8 +614,6 @@ async function stakeR2USD(wallet, amount, loops = 1) {
       await executeWithRetryAndDelay(
         async () => {
           log.step(`Starting ${operationName} with ${amount} R2USD (Loop ${i+1}/${loops})`);
-          
-          // Check R2USD balance
           const hasBalance = await ensureSufficientBalance(
             wallet, 
             Config.ContractsAddress.R2USD, 
@@ -663,12 +622,10 @@ async function stakeR2USD(wallet, amount, loops = 1) {
           );
           if (!hasBalance) return false;
 
-          // Get token decimals
           const r2usdContract = new ethers.Contract(Config.ContractsAddress.R2USD, Config.Abi.Erc20, wallet);
           const decimals = await r2usdContract.decimals();
           const amountInWei = ethers.parseUnits(amount.toString(), decimals);
           
-          // Check allowance
           const currentAllowance = await r2usdContract.allowance(
             wallet.address, 
             Config.ContractsAddress.sR2USD
@@ -683,8 +640,7 @@ async function stakeR2USD(wallet, amount, loops = 1) {
             );
             if (!approved) return false;
           }
-          
-          // Try Method ID first
+
           log.step('Attempting staking with method ID...');
           const data = Config.Router.stakingMethodId + 
                      BigInt(amountInWei).toString(16).padStart(64, '0') + 
@@ -714,8 +670,6 @@ async function stakeR2USD(wallet, amount, loops = 1) {
             log.success('Staking successful with method ID');
           } catch (error) {
             log.warn(`Failed with method ID: ${error.message}`);
-            
-            // Fallback to ABI method
             log.step('Attempting staking with ABI method...');
             const stakeContract = new ethers.Contract(
               Config.ContractsAddress.sR2USD, 
@@ -745,7 +699,6 @@ async function stakeR2USD(wallet, amount, loops = 1) {
             log.success('Staking successful with ABI method');
           }
           
-          // Check new balances
           const newR2USDBalance = await checkBalance(wallet, Config.ContractsAddress.R2USD);
           const newSR2USDBalance = await checkBalance(wallet, Config.ContractsAddress.sR2USD);
           
@@ -776,8 +729,6 @@ async function addLiquidity(wallet, amountTokenA, loops = 1) {
       await executeWithRetryAndDelay(
         async () => {
           log.step(`Starting ${operationName} with ${amountTokenA} R2 (Loop ${i+1}/${loops})`);
-          
-          // Get pool info
           const tokenA = Config.ContractsAddress.R2;
           const tokenB = Config.ContractsAddress.USDC;
           
@@ -790,7 +741,6 @@ async function addLiquidity(wallet, amountTokenA, loops = 1) {
             tokenBContract.decimals()
           ]);
           
-          // Get reserves
           const [reserve0, reserve1] = await pairContract.getReserves();
           const token0 = await pairContract.token0();
           
@@ -808,14 +758,12 @@ async function addLiquidity(wallet, amountTokenA, loops = 1) {
           log.info(`- USDC Reserve: ${tokenBReserveFormatted}`);
           log.info(`- Current Ratio: 1 R2 = ${ratio.toFixed(6)} USDC`);
           
-          // Calculate amounts
           const amountADesired = ethers.parseUnits(amountTokenA, tokenADecimals);
           const amountBDesired = ethers.parseUnits((ratio * Number(amountTokenA)).toFixed(6), tokenBDecimals);
           const amountAMin = ethers.parseUnits((Number(amountTokenA) * 0.99).toFixed(6), tokenADecimals);
           const amountBMin = ethers.parseUnits((ratio * Number(amountTokenA) * 0.99).toFixed(6), tokenBDecimals);
           const deadline = Math.floor(Date.now() / 1000) + 1200; // 20 minutes
           
-          // Check balances
           const balanceA = await tokenAContract.balanceOf(wallet.address);
           const balanceB = await tokenBContract.balanceOf(wallet.address);
           
@@ -827,7 +775,6 @@ async function addLiquidity(wallet, amountTokenA, loops = 1) {
             throw new Error(`Insufficient USDC balance. Required: ${(ratio * Number(amountTokenA)).toFixed(6)}, available: ${ethers.formatUnits(balanceB, tokenBDecimals)}`);
           }
           
-          // Approve tokens
           log.step('Approving R2 for liquidity');
           const approvedA = await approveToken(
             wallet,
@@ -848,7 +795,6 @@ async function addLiquidity(wallet, amountTokenA, loops = 1) {
           
           if (!approvedB) return false;
           
-          // Add liquidity
           const router = new ethers.Contract(Config.Router.stakingAddress, Config.Abi.Pool, wallet);
           
           log.step('Adding liquidity to pool');
@@ -875,7 +821,6 @@ async function addLiquidity(wallet, amountTokenA, loops = 1) {
           const receipt = await tx.wait();
           log.success(`Transaction confirmed in block ${receipt.blockNumber}`);
           
-          // Parse logs to get liquidity details
           const event = receipt.logs.find(log => 
             log.address.toLowerCase() === Config.Router.stakingAddress.toLowerCase()
           );
@@ -922,7 +867,6 @@ function displaySummary() {
 
 async function runDailyOperations() {
   try {
-    // Get private keys from environment variable
     const privateKeys = process.env.PRIVATE_KEY?.split(',').map(key => key.trim()).filter(key => key) || [];
     
     if (privateKeys.length === 0) {
@@ -932,15 +876,12 @@ async function runDailyOperations() {
     
     log.info(`Found ${privateKeys.length} private keys to process`);
     
-    // Process each wallet sequentially
     for (const [index, privateKey] of privateKeys.entries()) {
       try {
         log.info(`\n=== Processing wallet ${index + 1} of ${privateKeys.length} ===`);
         
-        // Initialize wallet (with proxy support)
         const wallet = await initializeWallet(privateKey);
         
-        // Execute operations with looping and human-like delays
         if (amounts.buyUsdcToR2usd && parseFloat(amounts.buyUsdcToR2usd) > 0) {
           await buyUsdcToR2usd(wallet, amounts.buyUsdcToR2usd, operationLoops.buy);
         }
@@ -969,17 +910,14 @@ async function runDailyOperations() {
           await addLiquidity(wallet, amounts.addLiquidity, operationLoops.liquidity);
         }
         
-        // Display summary for this wallet
         displaySummary();
         
-        // Add delay between wallets if not the last one
         if (index < privateKeys.length - 1) {
-          await randomDelay(30, 60); // Longer delay between wallets (30-60 seconds)
+          await randomDelay(30, 60);
         }
         
       } catch (error) {
         log.error(`Error processing wallet ${index + 1}: ${error.message}`);
-        // Continue with next wallet even if this one fails
       }
     }
     
@@ -993,10 +931,8 @@ async function main() {
   try {
     log.info('Starting daily operations scheduler...');
     
-    // Run immediately on startup
     await runDailyOperations();
     
-    // Then run every 24 hours
     const HOURS_24 = 24 * 60 * 60 * 1000;
     
     const scheduleNextRun = () => {
@@ -1006,13 +942,12 @@ async function main() {
       
       setTimeout(async () => {
         await runDailyOperations();
-        scheduleNextRun(); // Schedule the next run after this one completes
+        scheduleNextRun(); 
       }, HOURS_24);
     };
     
     scheduleNextRun();
     
-    // Keep the process running
     process.on('SIGINT', () => {
       log.info('Shutting down scheduler...');
       process.exit(0);
