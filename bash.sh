@@ -1,10 +1,9 @@
 #!/bin/bash
-
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 RED='\033[0;31m'
-NC='\033[0m'
+NC='\033[0m' 
 
 BOT_DIR="R2-Money-Bot"
 NODE_SCRIPT_NAME="index.js"
@@ -44,8 +43,7 @@ configure_env() {
 
     local keys=()
     while true; do
-        read -sp "Enter Private Key (will not be displayed): " pk
-        echo ""
+        read -p "Enter Private Key: " pk
         if [ -z "$pk" ]; then
             break
         fi
@@ -71,19 +69,34 @@ configure_loop() {
     local val_buy=10 val_sell=10 val_swap=10 val_stake=1 val_liquidity=1
 
     read -p "Change 'buy' count? (default: $val_buy) [y/N]: " choice
-    if [[ "$choice" =~ ^[Yy]$ ]]; then read -p "Enter new value for buy: " val_buy; fi
+    if [[ "$choice" =~ ^[Yy]$ ]]; then 
+        read -p "Enter new value for buy: " new_input
+        if [ -n "$new_input" ]; then val_buy=$new_input; fi
+    fi
 
     read -p "Change 'sell' count? (default: $val_sell) [y/N]: " choice
-    if [[ "$choice" =~ ^[Yy]$ ]]; then read -p "Enter new value for sell: " val_sell; fi
-    
+    if [[ "$choice" =~ ^[Yy]$ ]]; then 
+        read -p "Enter new value for sell: " new_input
+        if [ -n "$new_input" ]; then val_sell=$new_input; fi
+    fi
+
     read -p "Change 'swap' count? (default: $val_swap) [y/N]: " choice
-    if [[ "$choice" =~ ^[Yy]$ ]]; then read -p "Enter new value for swap: " val_swap; fi
+    if [[ "$choice" =~ ^[Yy]$ ]]; then 
+        read -p "Enter new value for swap: " new_input
+        if [ -n "$new_input" ]; then val_swap=$new_input; fi
+    fi
 
     read -p "Change 'stake' count? (default: $val_stake) [y/N]: " choice
-    if [[ "$choice" =~ ^[Yy]$ ]]; then read -p "Enter new value for stake: " val_stake; fi
-
+    if [[ "$choice" =~ ^[Yy]$ ]]; then 
+        read -p "Enter new value for stake: " new_input
+        if [ -n "$new_input" ]; then val_stake=$new_input; fi
+    fi
+-
     read -p "Change 'liquidity' count? (default: $val_liquidity) [y/N]: " choice
-    if [[ "$choice" =~ ^[Yy]$ ]]; then read -p "Enter new value for liquidity: " val_liquidity; fi
+    if [[ "$choice" =~ ^[Yy]$ ]]; then 
+        read -p "Enter new value for liquidity: " new_input
+        if [ -n "$new_input" ]; then val_liquidity=$new_input; fi
+    fi
 
     cat > "$file_path" << EOL
 {
@@ -103,34 +116,29 @@ configure_amount() {
     echo -e "${CYAN}➤ Configure Transaction Amounts (amount.json)${NC}"
     local file_path="$BOT_DIR/amount.json"
 
-    local val_buyUsdcToR2usd="100" 
-    local val_sellR2usdToUsdc="100" 
-    local val_swapR2ToR2usd="100" 
-    local val_swapR2usdToR2="100" 
-    local val_stakewBtc="0.01" 
-    local val_stakeR2USD="100" 
-    local val_addLiquidity="100"
+    local val_buyUsdcToR2usd="100" val_sellR2usdToUsdc="100" val_swapR2ToR2usd="100" 
+    local val_swapR2usdToR2="100" val_stakewBtc="0.01" val_stakeR2USD="100" val_addLiquidity="100"
 
     read -p "Change 'buyUsdcToR2usd' amount? (default: $val_buyUsdcToR2usd) [y/N]: " choice
-    if [[ "$choice" =~ ^[Yy]$ ]]; then read -p "Enter new value: " val_buyUsdcToR2usd; fi
+    if [[ "$choice" =~ ^[Yy]$ ]]; then read -p "Enter new value: " new_input && if [ -n "$new_input" ]; then val_buyUsdcToR2usd=$new_input; fi; fi
 
     read -p "Change 'sellR2usdToUsdc' amount? (default: $val_sellR2usdToUsdc) [y/N]: " choice
-    if [[ "$choice" =~ ^[Yy]$ ]]; then read -p "Enter new value: " val_sellR2usdToUsdc; fi
+    if [[ "$choice" =~ ^[Yy]$ ]]; then read -p "Enter new value: " new_input && if [ -n "$new_input" ]; then val_sellR2usdToUsdc=$new_input; fi; fi
 
     read -p "Change 'swapR2ToR2usd' amount? (default: $val_swapR2ToR2usd) [y/N]: " choice
-    if [[ "$choice" =~ ^[Yy]$ ]]; then read -p "Enter new value: " val_swapR2ToR2usd; fi
+    if [[ "$choice" =~ ^[Yy]$ ]]; then read -p "Enter new value: " new_input && if [ -n "$new_input" ]; then val_swapR2ToR2usd=$new_input; fi; fi
 
     read -p "Change 'swapR2usdToR2' amount? (default: $val_swapR2usdToR2) [y/N]: " choice
-    if [[ "$choice" =~ ^[Yy]$ ]]; then read -p "Enter new value: " val_swapR2usdToR2; fi
+    if [[ "$choice" =~ ^[Yy]$ ]]; then read -p "Enter new value: " new_input && if [ -n "$new_input" ]; then val_swapR2usdToR2=$new_input; fi; fi
 
     read -p "Change 'stakewBtc' amount? (default: $val_stakewBtc) [y/N]: " choice
-    if [[ "$choice" =~ ^[Yy]$ ]]; then read -p "Enter new value: " val_stakewBtc; fi
+    if [[ "$choice" =~ ^[Yy]$ ]]; then read -p "Enter new value: " new_input && if [ -n "$new_input" ]; then val_stakewBtc=$new_input; fi; fi
 
     read -p "Change 'stakeR2USD' amount? (default: $val_stakeR2USD) [y/N]: " choice
-    if [[ "$choice" =~ ^[Yy]$ ]]; then read -p "Enter new value: " val_stakeR2USD; fi
+    if [[ "$choice" =~ ^[Yy]$ ]]; then read -p "Enter new value: " new_input && if [ -n "$new_input" ]; then val_stakeR2USD=$new_input; fi; fi
 
     read -p "Change 'addLiquidity' amount? (default: $val_addLiquidity) [y/N]: " choice
-    if [[ "$choice" =~ ^[Yy]$ ]]; then read -p "Enter new value: " val_addLiquidity; fi
+    if [[ "$choice" =~ ^[Yy]$ ]]; then read -p "Enter new value: " new_input && if [ -n "$new_input" ]; then val_addLiquidity=$new_input; fi; fi
 
     cat > "$file_path" << EOL
 {
@@ -153,7 +161,7 @@ configure_proxy() {
     echo -e "${YELLOW}Enter your proxies one by one. Press ENTER on an empty line to finish.${NC}"
     echo -e "${YELLOW}Format: http://user:pass@ip:port${NC}"
 
-    > "$BOT_DIR/proxy.txt"
+    > "$BOT_DIR/proxy.txt" 
     local count=0
     while true; do
         read -p "Enter proxy: " proxy_line
@@ -185,7 +193,7 @@ run_bot() {
         echo -e "${YELLOW}The bot will run directly in this terminal.${NC}"
         echo -e "${YELLOW}Press ${RED}CTRL+C${YELLOW} to stop the bot.${NC}"
         sleep 2
-        
+
         (cd "$BOT_DIR" && node "$NODE_SCRIPT_NAME")
         
         echo -e "\n${GREEN}✓ Bot has been stopped. Returning to the menu.${NC}"
@@ -220,4 +228,3 @@ while true; do
         *) echo -e "${RED}Invalid option. Please try again.${NC}"; sleep 2 ;;
     esac
 done
-```
