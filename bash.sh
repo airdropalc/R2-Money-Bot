@@ -204,9 +204,9 @@ run_bot() {
 
 while true; do
     clear
-    echo -e "${CYAN}=====================================${NC}"
-    echo -e "${CYAN}            R2 MONEY BOT             ${NC}"
-    echo -e "${CYAN}=====================================${NC}"
+    echo -e "${CYAN}===================================================${NC}"
+    echo -e "${CYAN}            R2 MONEY BOT BY AIRDROP ALC            ${NC}"
+    echo -e "${CYAN}===================================================${NC}"
     echo -e "1. ${GREEN}Initial Setup${NC} (Git Clone & NPM Install)"
     echo -e "2. ${GREEN}Configure Private Keys${NC} (.env)"
     echo -e "3. ${GREEN}Configure Loop Counts${NC} (loop.json)"
