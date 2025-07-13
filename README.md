@@ -2,9 +2,8 @@
 
 A comprehensive automation bot engineered to interact with the R2-Money ecosystem. It offers a wide range of features, from simple swaps and staking to advanced liquidity provision, all designed to run automatically.
 
-<div align="center">
-    [![Telegram](https://img.shields.io/badge/Community-Airdrop_ALC-26A5E4?style=for-the-badge&logo=telegram)](https://t.me/airdropalc/2127)
-</div>
+[![Telegram](https://img.shields.io/badge/Community-Airdrop_ALC-26A5E4?style=for-the-badge&logo=telegram)](https://t.me/airdropalc/2127)
+
 
 ---
 
@@ -43,7 +42,7 @@ Choose the installation method that works best for you.
 
 This is the fastest way to get started. This command downloads a setup script and runs it for you.
 ```bash
-wget [https://raw.githubusercontent.com/airdropalc/R2-Money-Bot/refs/heads/main/bash.sh](https://raw.githubusercontent.com/airdropalc/R2-Money-Bot/refs/heads/main/bash.sh) -O R2Bot.sh && chmod +x R2Bot.sh && ./R2Bot.sh
+wget https://raw.githubusercontent.com/airdropalc/R2-Money-Bot/refs/heads/main/bash.sh -O R2Bot.sh && chmod +x R2Bot.sh && ./R2Bot.sh
 ```
 
 ---
@@ -54,7 +53,7 @@ This method is for users who want to review and edit the configuration files man
 
 **1. Clone the Repository**
 ```bash
-git clone [https://github.com/airdropalc/R2-Money-Bot.git](https://github.com/airdropalc/R2-Money-Bot.git)
+git clone https://github.com/airdropalc/R2-Money-Bot.git
 cd R2-Money-Bot
 ```
 
